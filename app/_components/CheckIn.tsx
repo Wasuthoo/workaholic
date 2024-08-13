@@ -64,7 +64,7 @@ const CheckIn: React.FC = () => {
     setTimer(null);
 
     // Save the record to a list
-    const records = JSON.parse(localStorage.getItem('records') || '[]');
+    const records:any = JSON.parse(localStorage.getItem('records') || '[]');
     records.push({
       checkInTime: localStorage.getItem('checkInTime'),
       checkOutTime,
