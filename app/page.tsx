@@ -1,65 +1,47 @@
-import { Metadata } from "next"
-import { Button } from "components/Button/Button"
-import { LP_GRID_ITEMS } from "lp-items"
+"use client"
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-export const metadata: Metadata = {
-  title: "Next.js Enterprise Boilerplate",
-  twitter: {
-    card: "summary_large_image",
-  },
-  openGraph: {
-    url: "https://next-enterprise.vercel.app/",
-    images: [
-      {
-        width: 1200,
-        height: 630,
-        url: "https://raw.githubusercontent.com/Blazity/next-enterprise/main/.github/assets/project-logo.png",
-      },
-    ],
-  },
-}
+const CheckIn: React.FC = () => {
+  const [checkInTime, setCheckInTime] = useState<Date | null>(null);
+  const [duration, setDuration] = useState<string | null>(null);
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
 
-export default function Web() {
+  const handleCheckIn = async () => {
+    const now = new Date();
+    setCheckInTime(now);
+    setTimer(setInterval(() => {
+      const elapsed = new Date(new Date().getTime() - now.getTime());
+      setDuration(elapsed.toISOString().substr(11, 8));
+    }, 1000));
+    await axios.post('/api/checkin', { checkInTime: now });
+  };
+
+  const handleCheckOut = async () => {
+    if (timer) clearInterval(timer);
+    const checkOutTime = new Date();
+    const timeDuration = new Date(checkOutTime.getTime() - (checkInTime?.getTime() || 0));
+    setDuration(timeDuration.toISOString().substr(11, 8));
+
+    await axios.post('/api/checkout', { checkOutTime, timeDuration: duration });
+
+    setCheckInTime(null);
+    setTimer(null);
+  };
+
   return (
-    <>
-      <section className="bg-white dark:bg-gray-900">
-        <div className="mx-auto grid max-w-screen-xl px-4 py-8 text-center lg:py-16">
-          <div className="mx-auto place-self-center">
-            <h1 className="mb-4 max-w-2xl text-4xl font-extrabold leading-none tracking-tight dark:text-white md:text-5xl xl:text-6xl">
-              Next.js Enterprise Boilerplate
-            </h1>
-            <p className="mb-6 max-w-2xl font-light text-gray-500 dark:text-gray-400 md:text-lg lg:mb-8 lg:text-xl">
-              Jumpstart your enterprise project with our feature-packed, high-performance Next.js boilerplate!
-              Experience rapid UI development, AI-powered code reviews, and an extensive suite of tools for a smooth and
-              enjoyable development process.
-            </p>
-            <Button href="https://github.com/Blazity/next-enterprise" className="mr-3">
-              Get started
-            </Button>
-            <Button
-              href="https://vercel.com/new/git/external?repository-url=https://github.com/Blazity/next-enterprise"
-              intent="secondary"
-            >
-              Deploy Now
-            </Button>
-          </div>
-        </div>
-      </section>
-      <section className="bg-white dark:bg-gray-900">
-        <div className="mx-auto max-w-screen-xl px-4 py-8 sm:py-16 lg:px-6">
-          <div className="justify-center space-y-8 md:grid md:grid-cols-2 md:gap-12 md:space-y-0 lg:grid-cols-3">
-            {LP_GRID_ITEMS.map((singleItem) => (
-              <div key={singleItem.title} className="flex flex-col items-center justify-center text-center">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 p-1.5 text-blue-700 dark:bg-primary-900 lg:h-12 lg:w-12">
-                  {singleItem.icon}
-                </div>
-                <h3 className="mb-2 text-xl font-bold dark:text-white">{singleItem.title}</h3>
-                <p className="text-gray-500 dark:text-gray-400">{singleItem.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </>
-  )
-}
+    <div>
+      {checkInTime ? (
+        <>
+          <p>Checked in at: {checkInTime.toLocaleTimeString()}</p>
+          <p>Time Count: {duration || '00:00:00'}</p>
+          <button onClick={handleCheckOut}>Check Out</button>
+        </>
+      ) : (
+        <button onClick={handleCheckIn}>Check In</button>
+      )}
+    </div>
+  );
+};
+
+export default CheckIn;
